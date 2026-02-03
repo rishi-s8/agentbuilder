@@ -55,6 +55,10 @@ class BaseConversationWrapper:
         """Clear the conversation history"""
         self.conversation_history = []
     
+    def reset(self):
+        """Reset all conversation state (alias for reset_conversation)"""
+        self.reset_conversation()
+    
     def get_history(self) -> List[Action]:
         """Get the full conversation history"""
         return self.conversation_history

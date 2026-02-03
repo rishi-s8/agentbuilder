@@ -31,7 +31,12 @@ class AgenticLoop:
         self.planner = planner
         self.tool_map = tool_map
         self.verbose = verbose
-        self.max_iterations = max_iterations    
+        self.max_iterations = max_iterations
+    
+    def reset(self):
+        """Reset all agentic loop state including conversation history and planner state"""
+        self.conversation.reset()
+        self.planner.reset()
     
     def run(self, message: str, system_prompt: Optional[str] = None) -> str:
         """

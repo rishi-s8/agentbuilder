@@ -31,6 +31,10 @@ class AgenticPlanner:
         self.tool_map = tool_map
         self.verbose = verbose
     
+    def reset(self):
+        """Reset planner state (currently no internal state to reset)"""
+        pass
+    
     def step(self, conversation_history: List[Action], iterations: int = 0) -> Action:
         """
         Analyze conversation state and decide what action to take next.
