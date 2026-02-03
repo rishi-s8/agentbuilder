@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentbuilder"
+version = "0.0.0"
+description = "A flexible framework for building agentic AI systems with tool orchestration"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Rishi Sharma" }
+]
+requires-python = ">=3.8"
+dependencies = [
+    "openai>=2.16.0",
+    "pydantic>=2.12.5",
+    "dotenv>=0.9.9",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
