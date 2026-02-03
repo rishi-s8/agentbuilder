@@ -14,7 +14,7 @@ Add a .env file in the environment like the one given as `.env.example`.
 
 ## License
 
-MIT License
+CC BY SA 4.0 (See LICENSE file for details.)
 
 ## Contributing
 
