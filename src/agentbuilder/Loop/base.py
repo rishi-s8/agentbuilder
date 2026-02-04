@@ -38,21 +38,16 @@ class AgenticLoop:
         self.conversation.reset()
         self.planner.reset()
     
-    def run(self, message: str, system_prompt: Optional[str] = None) -> str:
+    def run(self, message: str) -> str:
         """
         Run the agentic loop.
         
         Args:
             message: User message to process
-            system_prompt: Optional system prompt
         
         Returns:
             Final response string
         """
-        # Add system prompt if provided
-        if system_prompt and not self.conversation.conversation_history:
-            self.conversation.add_system_message(system_prompt)
-        
         # Add user message
         self.conversation.add_user_message(message)
         

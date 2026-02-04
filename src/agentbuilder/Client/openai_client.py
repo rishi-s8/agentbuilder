@@ -15,7 +15,8 @@ class ConversationWrapper(BaseConversationWrapper):
     def __init__(self, api_key: Optional[str] = None, 
                  model: Optional[str] = None, 
                  base_url: Optional[str] = "https://inference.rcp.epfl.ch/v1",
-                 verbose: bool = False):
+                 verbose: bool = False,
+                 system_prompt: Optional[str] = None):
         """
         Initialize the conversation wrapper.
         
@@ -24,6 +25,7 @@ class ConversationWrapper(BaseConversationWrapper):
             model: Model to use
             base_url: Custom API endpoint URL
             verbose: Whether to print execution details
+            system_prompt: System prompt to set conversation context
         """
         super().__init__()
         
@@ -44,24 +46,23 @@ class ConversationWrapper(BaseConversationWrapper):
         self.client = OpenAI(**client_kwargs)
         self.model = model
         self.verbose = verbose
+        
+        # Add system prompt to conversation history if provided
+        if system_prompt:
+            self.add_system_message(system_prompt)
     
-    def send_message(self, message: str, system_prompt: Optional[str] = None, **kwargs) -> str:
+    def send_message(self, message: str, **kwargs) -> str:
         """
         Send a message and get a response (simple LLM call without tool orchestration).
         For agentic tool orchestration, use AgenticLoop.run() instead.
         
         Args:
             message: User message to send
-            system_prompt: Optional system prompt to set context
             **kwargs: Additional parameters to pass to the API
         
         Returns:
             Assistant's response as a string
         """
-        # Add system message if provided and conversation is empty
-        if system_prompt and not self.conversation_history:
-            self.add_system_message(system_prompt)
-        
         # Add user message
         self.add_user_message(message)
         
