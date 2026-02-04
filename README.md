@@ -2,6 +2,8 @@
 
 A flexible Python framework for building agentic AI systems with tool orchestration, planning, and conversation management.
 
+> ⚠️ **Warning**: This project is under active development with regular breaking changes in the API.
+
 ## Installation
 
 ```bash
