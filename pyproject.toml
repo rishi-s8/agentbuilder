@@ -7,7 +7,7 @@ name = "agentbuilder"
 version = "0.0.0"
 description = "A flexible framework for building agentic AI systems with tool orchestration"
 readme = "README.md"
-license = "MIT"
+license = {text = "CC BY-SA 4.0"}
 authors = [
     { name = "Rishi Sharma" }
 ]
