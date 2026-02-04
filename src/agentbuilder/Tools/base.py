@@ -104,6 +104,18 @@ def tool_from_function(func: Callable) -> Tool:
     if "description" in schema:
         parameters["description"] = schema["description"]
 
+    # Build description with return type information
+    description = func.__doc__ or f"Execute {func.__name__}"
+
+    # Extract and append return type information
+    if sig.return_annotation and sig.return_annotation != inspect.Signature.empty:
+        return_type = sig.return_annotation
+        if inspect.isclass(return_type) and issubclass(return_type, BaseModel):
+            return_schema = return_type.model_json_schema()
+            description += f"\n\nReturns: {return_schema}"
+        else:
+            description += f"\n\nReturns: {return_type}"
+
     # Wrapper function that creates Pydantic instance
     def wrapper(**kwargs):
         params_instance = param_type(**kwargs)
@@ -112,7 +124,7 @@ def tool_from_function(func: Callable) -> Tool:
     # Create the tool
     return Tool(
         name=func.__name__,
-        description=func.__doc__ or f"Execute {func.__name__}",
+        description=description,
         parameters=parameters,
         function=wrapper,
     )
