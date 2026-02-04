@@ -1,8 +1,11 @@
 """Shared fixtures for agentbuilder tests."""
+
+from unittest.mock import MagicMock, Mock
+
 import pytest
-from unittest.mock import Mock, MagicMock
+
 from agentbuilder.Client.base import BaseConversationWrapper
-from agentbuilder.Tools.base import Tool, Response
+from agentbuilder.Tools.base import Response, Tool
 
 
 @pytest.fixture
@@ -21,21 +24,19 @@ def mock_openai_client():
 @pytest.fixture
 def sample_tool():
     """Sample tool for testing."""
+
     def sample_function(x: int, y: int) -> int:
         return x + y
-    
+
     return Tool(
         name="add",
         description="Add two numbers",
         parameters={
             "type": "object",
-            "properties": {
-                "x": {"type": "integer"},
-                "y": {"type": "integer"}
-            },
-            "required": ["x", "y"]
+            "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}},
+            "required": ["x", "y"],
         },
-        function=sample_function
+        function=sample_function,
     )
 
 
