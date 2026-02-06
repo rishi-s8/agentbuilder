@@ -19,7 +19,10 @@ class Response:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert response to dictionary format"""
-        result = {"success": self.success, "data": self.data}
+        data = self.data
+        if hasattr(data, "model_dump"):
+            data = data.model_dump()
+        result = {"success": self.success, "data": data}
         if self.error:
             result["error"] = self.error
         return result
