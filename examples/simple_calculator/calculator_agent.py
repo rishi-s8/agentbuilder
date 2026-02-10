@@ -22,11 +22,23 @@ class AddParams(BaseModel):
     b: int = Field(description="Second number to add")
 
 
+class AddReturn(BaseModel):
+    """Return model for adding two numbers"""
+
+    result: int = Field(description="Result of the addition")
+
+
 class MultiplyParams(BaseModel):
     """Parameters for multiplying two numbers"""
 
     x: int = Field(description="First number to multiply")
     y: int = Field(description="Second number to multiply")
+
+
+class MultiplyReturn(BaseModel):
+    """Return model for multiplying two numbers"""
+
+    result: int = Field(description="Result of the multiplication")
 
 
 class TimeParams(BaseModel):
@@ -35,27 +47,35 @@ class TimeParams(BaseModel):
     pass
 
 
+class TimeReturn(BaseModel):
+    """Return model for getting current time"""
+
+    datetime: str = Field(description="Current date and time")
+    date: str = Field(description="Current date")
+    time: str = Field(description="Current time")
+
+
 # Define tool functions
-def add(params: AddParams) -> dict:
+def add(params: AddParams) -> AddReturn:
     """Add two numbers together and return the result"""
     result = params.a + params.b
-    return {"result": result, "operation": "addition"}
+    return AddReturn(result=result)
 
 
-def multiply(params: MultiplyParams) -> dict:
+def multiply(params: MultiplyParams) -> MultiplyReturn:
     """Multiply two numbers together and return the result"""
     result = params.x * params.y
-    return {"result": result, "operation": "multiplication"}
+    return MultiplyReturn(result=result)
 
 
-def get_current_time(params: TimeParams) -> dict:
+def get_current_time(params: TimeParams) -> TimeReturn:
     """Get the current date and time"""
     now = datetime.now()
-    return {
-        "datetime": now.strftime("%Y-%m-%d %H:%M:%S"),
-        "date": now.strftime("%Y-%m-%d"),
-        "time": now.strftime("%H:%M:%S"),
-    }
+    return TimeReturn(
+        datetime=now.strftime("%Y-%m-%d %H:%M:%S"),
+        date=now.strftime("%Y-%m-%d"),
+        time=now.strftime("%H:%M:%S"),
+    )
 
 
 # Create tools from functions
