@@ -11,7 +11,7 @@ license = {text = "CC BY-SA 4.0"}
 authors = [
     { name = "Rishi Sharma" }
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "openai>=2.16.0",
     "pydantic>=2.12.5",
