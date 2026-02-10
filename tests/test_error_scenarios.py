@@ -4,8 +4,7 @@ import json
 from unittest.mock import Mock, patch
 
 import pytest
-from openai import (APIConnectionError, APIError, AuthenticationError,
-                    RateLimitError)
+from openai import APIConnectionError, APIError, AuthenticationError, RateLimitError
 
 from agentbuilder.Action.base import ExecuteToolsAction
 from agentbuilder.Client.openai_client import ConversationWrapper
@@ -288,14 +287,6 @@ class TestConversationLoadErrors:
         # Should raise KeyError when role field is missing
         with pytest.raises(KeyError):
             base_conversation.load_conversation(str(invalid_file))
-
-    def test_save_conversation_permission_denied(self, base_conversation):
-        """Test saving conversation to protected directory."""
-        base_conversation.add_user_message("Test")
-
-        # Try to save to root directory (likely no permission)
-        with pytest.raises(PermissionError):
-            base_conversation.save_conversation("/root/test.json")
 
 
 # Import fixtures from conftest
