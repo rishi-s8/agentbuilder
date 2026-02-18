@@ -1,5 +1,9 @@
 """
 Agentic planner for analyzing conversation state and creating executable actions.
+
+The :class:`AgenticPlanner` examines the last message in the conversation
+history and decides which action the loop should execute next -- without
+making any LLM calls itself.
 """
 
 from typing import Any, Dict, List
@@ -11,7 +15,18 @@ from agentbuilder.Action.base import (Action, AssistantMessageAction,
 
 
 class AgenticPlanner:
-    """Plans the next action based on conversation history without making LLM calls"""
+    """Plans the next action based on conversation history without making LLM calls.
+
+    The planner follows a simple decision tree:
+
+    1. **Empty history** -> :class:`~agentbuilder.Action.base.EmptyAction`
+    2. **Last message is AssistantMessage with tool_calls** ->
+       :class:`~agentbuilder.Action.base.ExecuteToolsAction`
+    3. **Last message is ToolMessage or UserMessage** ->
+       :class:`~agentbuilder.Action.base.MakeLLMRequestAction`
+    4. **Last message is AssistantMessage with text, no tool_calls** ->
+       :class:`~agentbuilder.Action.base.CompleteAction`
+    """
 
     def __init__(
         self, conversation_wrapper, tool_map: Dict[str, Any], verbose: bool = True
@@ -20,28 +35,49 @@ class AgenticPlanner:
         Initialize the agentic planner.
 
         Args:
-            conversation_wrapper: Conversation wrapper for history management
-            tool_map: Mapping of tool names to Tool objects
-            verbose: Whether to print planning details
+            conversation_wrapper: A
+                :class:`~agentbuilder.Client.base.BaseConversationWrapper`
+                managing conversation history.
+            tool_map: Mapping of tool names to
+                :class:`~agentbuilder.Tools.base.Tool` objects.
+            verbose: Whether to print planning details.
         """
         self.conversation_wrapper = conversation_wrapper
         self.tool_map = tool_map
         self.verbose = verbose
 
     def reset(self):
-        """Reset planner state (currently no internal state to reset)"""
+        """Reset planner state.
+
+        Currently the planner is stateless, so this is a no-op. Provided
+        for interface consistency with
+        :meth:`~agentbuilder.Loop.base.AgenticLoop.reset`.
+        """
         pass
 
     def step(self, conversation_history: List[Action], iterations: int = 0) -> Action:
         """
         Analyze conversation state and decide what action to take next.
 
+        Decision tree:
+            - Empty history -> ``EmptyAction``
+            - Last = ``AssistantMessageAction`` with ``tool_calls`` -> ``ExecuteToolsAction``
+            - Last = ``ToolMessageAction`` or ``UserMessageAction`` -> ``MakeLLMRequestAction``
+            - Last = ``AssistantMessageAction`` with content, no tool_calls -> ``CompleteAction``
+
         Args:
-            conversation_history: Current conversation history (list of Action objects)
-            iterations: Current iteration count
+            conversation_history: Current conversation history (list of
+                :class:`~agentbuilder.Action.base.Action` objects).
+            iterations: Current iteration count (passed through to
+                terminal actions).
 
         Returns:
-            Action object with run() method: ExecuteToolsAction, MakeLLMRequestAction, CompleteAction, or EmptyAction
+            An :class:`~agentbuilder.Action.base.Action` with a
+            :meth:`run` method.
+
+        Raises:
+            NotImplementedError: If the conversation ends in an
+                unrecognised action type.
         """
         if self.verbose:
             print(

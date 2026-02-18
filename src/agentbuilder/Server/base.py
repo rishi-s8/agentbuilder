@@ -1,5 +1,17 @@
 """
 FastAPI server for exposing agents as HTTP services with session isolation.
+
+Each HTTP session gets its own
+:class:`~agentbuilder.Loop.base.AgenticLoop` instance, created on demand
+by an ``agent_factory`` callable (see :func:`~agentbuilder.utils.create_agent_factory`).
+
+Endpoints:
+    ``GET  /info``                      -- agent name and description.
+    ``GET  /health``                    -- health check.
+    ``POST /sessions``                  -- create a new session.
+    ``POST /sessions/{id}/run``         -- run a message in a session.
+    ``POST /sessions/{id}/reset``       -- reset a session's conversation.
+    ``DELETE /sessions/{id}``           -- delete a session.
 """
 
 import threading
@@ -70,12 +82,28 @@ def create_agent_app(
     Create a FastAPI app that exposes an agent as an HTTP service with session isolation.
 
     Args:
-        agent_factory: Callable that creates a fresh AgenticLoop instance
-        name: Name of the agent
-        description: Description of what the agent does
+        agent_factory: A zero-argument callable that creates a fresh
+            :class:`~agentbuilder.Loop.base.AgenticLoop` instance.
+            Use :func:`~agentbuilder.utils.create_agent_factory` to build
+            one.
+        name: Name of the agent (returned by ``/info``).
+        description: Description of what the agent does.
 
     Returns:
-        FastAPI app instance
+        A :class:`fastapi.FastAPI` app instance with session-isolated
+        agent endpoints.
+
+    Example::
+
+        from agentbuilder.utils import create_agent_factory
+        from agentbuilder.Server.base import create_agent_app
+
+        factory = create_agent_factory(
+            model_name="gpt-4o-mini",
+            tools=[my_tool],
+        )
+        app = create_agent_app(factory, "my_agent", "A helpful agent")
+        # Mount or run with uvicorn
     """
     app = FastAPI(title=name, description=description)
     store = _SessionStore()
@@ -136,13 +164,34 @@ def serve_agent(
     """
     Start a FastAPI server exposing the agent with session isolation.
 
+    This is a convenience wrapper around :func:`create_agent_app` that
+    starts a uvicorn server immediately.
+
     Args:
-        agent_factory: Callable that creates a fresh AgenticLoop instance
-        name: Name of the agent
-        description: Description of what the agent does
-        host: Host to bind to
-        port: Port to listen on
-        **uvicorn_kwargs: Additional keyword arguments passed to uvicorn.run()
+        agent_factory: A zero-argument callable that creates a fresh
+            :class:`~agentbuilder.Loop.base.AgenticLoop` instance.
+        name: Name of the agent.
+        description: Description of what the agent does.
+        host: Host to bind to (default ``"0.0.0.0"``).
+        port: Port to listen on (default ``8000``).
+        **uvicorn_kwargs: Additional keyword arguments passed to
+            ``uvicorn.run()``.
+
+    Example::
+
+        from agentbuilder.utils import create_agent_factory
+        from agentbuilder.Server import serve_agent
+
+        factory = create_agent_factory(
+            model_name="gpt-4o-mini",
+            tools=[my_tool],
+        )
+        serve_agent(
+            factory,
+            name="calculator",
+            description="A calculator agent",
+            port=8100,
+        )
     """
     import uvicorn
 

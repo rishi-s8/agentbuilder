@@ -1,0 +1,16 @@
+/* Custom styles for AgentBuilder documentation */
+
+/* Slightly increase max content width */
+.content {
+    max-width: 900px;
+}
+
+/* Style admonitions for examples */
+.admonition.example {
+    border-left-color: #2980b9;
+}
+
+/* Code block styling */
+.highlight pre {
+    border-radius: 4px;
+}

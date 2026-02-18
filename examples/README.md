@@ -4,7 +4,6 @@ This directory contains examples demonstrating how to use the agentbuilder frame
 
 ## Available Examples
 
-
 ### 1. Simple Calculator (`simple_calculator/`)
 
 **Best for**: Learning tool orchestration
@@ -16,7 +15,44 @@ A practical calculator agent demonstrating:
 
 **Tools included**: add, multiply, get_current_time
 
-[Go to Simple Calculator →](simple_calculator/)
+[Go to Simple Calculator](simple_calculator/)
+
+### 2. Code Execution Agent (`code_agent/`)
+
+**Best for**: Running Python in Docker sandboxes
+
+An agent that writes and executes Python code:
+- Docker-based sandbox with persistent state
+- Code execution, file I/O, package installation
+- Automatic container cleanup
+
+**Requires**: Docker, `pip install agentbuilder[code]`
+
+[Go to Code Agent](code_agent/)
+
+### 3. Multi-Agent Delegation (`multi_agent/`)
+
+**Best for**: Composing specialist agents
+
+A parent agent that delegates to a math sub-agent:
+- Local sub-agent creation with `create_agent_tool()`
+- Parent-child agent composition
+- Automatic sub-agent reset between delegations
+
+[Go to Multi-Agent](multi_agent/)
+
+### 4. Served Agent (`served_agent/`)
+
+**Best for**: Agents over HTTP
+
+Serve an agent as a FastAPI service and connect from a client:
+- Agent factory and server setup
+- Session-isolated HTTP API
+- Remote agent tool for client-side delegation
+
+**Requires**: `pip install agentbuilder[server]`
+
+[Go to Served Agent](served_agent/)
 
 ## Quick Start
 
@@ -35,14 +71,14 @@ A practical calculator agent demonstrating:
 
 2. **Set up environment**:
    ```bash
-   cd examples/simple_calculator
+   cd examples/<example_name>
    cp .env.example .env
    # Edit .env with your API key
    ```
 
 3. **Run an example**:
    ```bash
-   python simple_agent.py
+   python <script_name>.py
    ```
 
 ## Example Structure
@@ -73,25 +109,16 @@ BASE_URL=your_base_url_here
 
 We recommend starting with:
 
-- **simple_calculator/** - Learn tool orchestration and multi-step tasks
-
-## Creating Your Own Examples
-
-To create a new example:
-
-1. Create a directory: `examples/my_example/`
-2. Add a `README.md` explaining what it does
-3. Create your main script with:
-   - Tool definitions (Pydantic models + functions)
-   - Agent creation with `create_agent()`
-   - Example usage demonstrating your tools
-4. Add `.env.example` for configuration
+1. **simple_calculator/** -- Learn tool orchestration and multi-step tasks
+2. **multi_agent/** -- Learn agent composition and delegation
+3. **code_agent/** -- Learn sandboxed code execution
+4. **served_agent/** -- Learn HTTP agent serving
 
 ## Need Help?
 
 - Check the main [README](../README.md)
+- Read the [documentation](https://agentbuilder.readthedocs.io)
 - Review the [source code](../src/agentbuilder/)
-- Look at existing examples for patterns
 
 ## Contributing
 

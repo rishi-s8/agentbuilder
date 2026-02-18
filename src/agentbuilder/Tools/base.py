@@ -1,5 +1,9 @@
 """
 Base classes for tool definition and execution.
+
+Provides the :class:`Tool` base class that wraps a callable with an
+OpenAI-compatible JSON schema, and :func:`tool_from_function` to derive
+a Tool automatically from a Pydantic-annotated function.
 """
 
 import inspect
@@ -11,14 +15,33 @@ from pydantic import BaseModel
 
 @dataclass
 class Response:
-    """Standard response format for tool execution"""
+    """Standard response format for tool execution.
+
+    Attributes:
+        success: Whether the tool executed without errors.
+        data: The return value of the tool function (may be any type).
+        error: Error message if ``success`` is ``False``.
+
+    Example::
+
+        resp = Response(success=True, data={"result": 42})
+        resp.to_dict()
+        # {"success": True, "data": {"result": 42}}
+    """
 
     success: bool
     data: Any
     error: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert response to dictionary format"""
+        """Convert response to dictionary format.
+
+        Pydantic models in ``data`` are automatically serialized via
+        ``model_dump()``.
+
+        Returns:
+            Dict with ``success``, ``data``, and optionally ``error`` keys.
+        """
         data = self.data
         if hasattr(data, "model_dump"):
             data = data.model_dump()
@@ -29,7 +52,35 @@ class Response:
 
 
 class Tool:
-    """Base tool class for function calling"""
+    """Base tool class for function calling.
+
+    Wraps a callable with metadata so it can be exposed to an LLM in
+    OpenAI function-calling format.
+
+    Attributes:
+        name: Tool name (must match the function-call ``name``).
+        description: Human-readable description shown to the LLM.
+        parameters: JSON Schema dict describing the tool's parameters.
+        function: The underlying callable to execute.
+
+    Example::
+
+        def greet(name: str) -> str:
+            return f"Hello, {name}!"
+
+        tool = Tool(
+            name="greet",
+            description="Greet a user by name.",
+            parameters={
+                "type": "object",
+                "properties": {"name": {"type": "string"}},
+                "required": ["name"],
+            },
+            function=greet,
+        )
+        resp = tool.execute(name="Alice")
+        # Response(success=True, data="Hello, Alice!")
+    """
 
     def __init__(
         self, name: str, description: str, parameters: Dict, function: Callable
@@ -38,10 +89,10 @@ class Tool:
         Initialize a tool.
 
         Args:
-            name: Name of the tool
-            description: Description of what the tool does
-            parameters: JSON schema for parameters
-            function: The actual function to execute
+            name: Name of the tool (used in LLM function calling).
+            description: Description of what the tool does.
+            parameters: JSON Schema dict for the tool's parameters.
+            function: The actual function to execute.
         """
         self.name = name
         self.description = description
@@ -49,7 +100,12 @@ class Tool:
         self.function = function
 
     def to_openai_format(self) -> Dict:
-        """Convert tool to OpenAI function calling format"""
+        """Convert tool to OpenAI function calling format.
+
+        Returns:
+            Dict with ``type`` and ``function`` keys matching the OpenAI
+            tools specification.
+        """
         return {
             "type": "function",
             "function": {
@@ -60,7 +116,16 @@ class Tool:
         }
 
     def execute(self, **kwargs) -> Response:
-        """Execute the tool function with given arguments"""
+        """Execute the tool function with given arguments.
+
+        Args:
+            **kwargs: Keyword arguments matching the tool's parameter
+                schema.
+
+        Returns:
+            A :class:`Response` with ``success=True`` and the return
+            value, or ``success=False`` with an error message.
+        """
         try:
             result = self.function(**kwargs)
             return Response(success=True, data=result)
@@ -70,13 +135,38 @@ class Tool:
 
 def tool_from_function(func: Callable) -> Tool:
     """
-    Create a Tool from a function with Pydantic parameter annotation.
+    Create a Tool from a function with a Pydantic parameter annotation.
+
+    The function must accept exactly one parameter whose type annotation is
+    a :class:`pydantic.BaseModel` subclass. The JSON schema is derived
+    automatically from the model.
 
     Args:
-        func: Function with a single Pydantic BaseModel parameter
+        func: Function with a single Pydantic BaseModel parameter.
 
     Returns:
-        Tool object
+        A :class:`Tool` object ready for use in an agent.
+
+    Raises:
+        ValueError: If *func* does not have exactly one parameter, or if
+            the parameter's annotation is not a Pydantic ``BaseModel``
+            subclass.
+
+    Example::
+
+        from pydantic import BaseModel, Field
+
+        class AddParams(BaseModel):
+            a: int = Field(description="First number")
+            b: int = Field(description="Second number")
+
+        def add(params: AddParams) -> int:
+            \"\"\"Add two numbers together.\"\"\"
+            return params.a + params.b
+
+        tool = tool_from_function(add)
+        # tool.name == "add"
+        # tool.execute(a=1, b=2) -> Response(success=True, data=3)
     """
     # Get function signature
     sig = inspect.signature(func)

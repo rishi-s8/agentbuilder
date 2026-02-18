@@ -1,5 +1,14 @@
 """
 Conversation wrapper for OpenAI API interactions.
+
+Extends :class:`~agentbuilder.Client.base.BaseConversationWrapper` with an
+OpenAI client and automatic ``.env`` loading for API credentials.
+
+Note:
+    When ``api_key`` is not provided explicitly, the wrapper loads
+    environment variables from a ``.env`` file using ``python-dotenv``.
+    The following variables are read: ``OPENAI_API_KEY``, ``MODEL``,
+    ``BASE_URL``.
 """
 
 import json
@@ -12,7 +21,22 @@ from agentbuilder.Client.base import BaseConversationWrapper
 
 
 class ConversationWrapper(BaseConversationWrapper):
-    """OpenAI conversation wrapper for managing conversations and making LLM calls"""
+    """OpenAI conversation wrapper for managing conversations and making LLM calls.
+
+    This is the default conversation backend used by
+    :func:`~agentbuilder.utils.create_agent`.
+
+    Example::
+
+        from agentbuilder.Client.openai_client import ConversationWrapper
+
+        conv = ConversationWrapper(
+            model="gpt-4o-mini",
+            system_prompt="You are a helpful assistant.",
+        )
+        reply = conv.send_message("Hello!")
+        print(reply)
+    """
 
     def __init__(
         self,
@@ -26,11 +50,20 @@ class ConversationWrapper(BaseConversationWrapper):
         Initialize the conversation wrapper.
 
         Args:
-            api_key: OpenAI API key (if None, uses OPENAI_API_KEY env var or .env file)
-            model: Model to use
-            base_url: Custom API endpoint URL
-            verbose: Whether to print execution details
-            system_prompt: System prompt to set conversation context
+            api_key: OpenAI API key. If ``None``, loads from
+                ``OPENAI_API_KEY`` env var or ``.env`` file.
+            model: Model identifier (e.g. ``"gpt-4o-mini"``). Falls back to
+                the ``MODEL`` env var.
+            base_url: Custom API endpoint URL. Falls back to ``BASE_URL``
+                env var if ``api_key`` is ``None``.
+            verbose: Whether to print execution details.
+            system_prompt: System prompt to set conversation context.
+
+        Note:
+            When *api_key* is ``None``, ``python-dotenv`` loads a ``.env``
+            file from the working directory.  Environment variables
+            ``OPENAI_API_KEY``, ``MODEL``, and ``BASE_URL`` are then
+            read as fallbacks.
         """
         super().__init__()
 
@@ -60,14 +93,23 @@ class ConversationWrapper(BaseConversationWrapper):
     def send_message(self, message: str, **kwargs) -> str:
         """
         Send a message and get a response (simple LLM call without tool orchestration).
-        For agentic tool orchestration, use AgenticLoop.run() instead.
+
+        For agentic tool orchestration, use
+        :meth:`~agentbuilder.Loop.base.AgenticLoop.run` instead.
 
         Args:
-            message: User message to send
-            **kwargs: Additional parameters to pass to the API
+            message: User message to send.
+            **kwargs: Additional parameters passed to
+                ``client.chat.completions.create()``.
 
         Returns:
-            Assistant's response as a string
+            The assistant's response as a string.
+
+        Example::
+
+            conv = ConversationWrapper(model="gpt-4o-mini")
+            answer = conv.send_message("What is 2+2?")
+            print(answer)  # "4"
         """
         # Add user message
         self.add_user_message(message)

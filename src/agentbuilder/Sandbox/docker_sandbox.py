@@ -1,5 +1,17 @@
 """
 Docker-based sandbox for isolated code execution with persistent state.
+
+Uses a persistent REPL server inside a Docker container so that variables,
+imports, and function definitions survive across :meth:`execute` calls.
+
+Note:
+    Requires Docker to be installed and running on the host machine.
+    Install the ``code`` extra: ``pip install agentbuilder[code]``.
+
+Security:
+    Containers are started with ``no-new-privileges``, all Linux
+    capabilities dropped, and (by default) networking disabled. Memory
+    and CPU are capped via ``mem_limit`` and ``cpu_quota``.
 """
 
 import json
@@ -20,7 +32,20 @@ class DockerSandbox(Sandbox):
     Sandbox that runs code in an isolated Docker container.
 
     Uses a persistent REPL server inside the container so variables,
-    imports, and functions persist between execute() calls.
+    imports, and functions persist between :meth:`execute` calls.
+
+    Example::
+
+        from agentbuilder.Sandbox.docker_sandbox import DockerSandbox
+
+        with DockerSandbox(image="python:3.11-slim") as sandbox:
+            r1 = sandbox.execute("x = 42")
+            r2 = sandbox.execute("print(x)")
+            print(r2.stdout)  # "42\\n"
+
+    Raises:
+        docker.errors.DockerException: If Docker is not available or the
+            image cannot be pulled.
     """
 
     def __init__(
@@ -35,11 +60,17 @@ class DockerSandbox(Sandbox):
         Initialize DockerSandbox and start a container.
 
         Args:
-            image: Docker image to use
-            mem_limit: Memory limit for the container
-            cpu_quota: CPU quota (microseconds per 100ms period)
-            network_disabled: Whether to disable networking
+            image: Docker image to use (default ``"python:3.11-slim"``).
+            mem_limit: Memory limit for the container (default ``"512m"``).
+            cpu_quota: CPU quota in microseconds per 100 ms period
+                (default ``50000``, i.e. 50 % of one core).
+            network_disabled: Whether to disable networking inside the
+                container (default ``True``).
             working_dir: Working directory inside the container
+                (default ``"/workspace"``).
+
+        Raises:
+            docker.errors.DockerException: If Docker is not reachable.
         """
         self.image = image
         self.working_dir = working_dir
@@ -82,7 +113,12 @@ class DockerSandbox(Sandbox):
         self._sock = self._socket._sock
 
     def _copy_file_to_container(self, local_path: str, container_path: str):
-        """Copy a file into the container using a tar archive."""
+        """Copy a file into the container using a tar archive.
+
+        Args:
+            local_path: Absolute path on the host.
+            container_path: Destination path inside the container.
+        """
         with open(local_path, "rb") as f:
             file_data = f.read()
 
@@ -100,11 +136,12 @@ class DockerSandbox(Sandbox):
         Execute code in the persistent REPL.
 
         Args:
-            code: Python code to execute
-            timeout: Maximum execution time in seconds
+            code: Python code to execute.
+            timeout: Maximum execution time in seconds.
 
         Returns:
-            ExecutionResult with stdout, stderr, success, and exit_code
+            An :class:`~agentbuilder.Sandbox.base.ExecutionResult` with
+            stdout, stderr, success, and exit_code.
         """
         command = json.dumps({"code": code, "timeout": timeout}) + "\n"
         self._sock.sendall(command.encode())
@@ -150,7 +187,18 @@ class DockerSandbox(Sandbox):
         )
 
     def read_file(self, path: str) -> str:
-        """Read a file from the container."""
+        """Read a file from the container.
+
+        Args:
+            path: Path inside the container.
+
+        Returns:
+            File contents as a string.
+
+        Raises:
+            FileNotFoundError: If the file does not exist in the
+                container.
+        """
         exit_code, output = self.container.exec_run(["cat", path])
         if exit_code != 0:
             raise FileNotFoundError(
@@ -159,7 +207,12 @@ class DockerSandbox(Sandbox):
         return output.decode()
 
     def write_file(self, path: str, content: str) -> None:
-        """Write a file to the container."""
+        """Write a file to the container.
+
+        Args:
+            path: Destination path inside the container.
+            content: File content to write.
+        """
         tar_stream = BytesIO()
         with tarfile.open(fileobj=tar_stream, mode="w") as tar:
             data = content.encode()
@@ -170,7 +223,14 @@ class DockerSandbox(Sandbox):
         self.container.put_archive(os.path.dirname(path) or "/", tar_stream)
 
     def install_package(self, package: str) -> ExecutionResult:
-        """Install a Python package in the container."""
+        """Install a Python package in the container.
+
+        Args:
+            package: Package name (e.g. ``"numpy"``).
+
+        Returns:
+            An :class:`~agentbuilder.Sandbox.base.ExecutionResult`.
+        """
         exit_code, output = self.container.exec_run(["pip", "install", package])
         stdout = output.decode()
         return ExecutionResult(
@@ -181,7 +241,11 @@ class DockerSandbox(Sandbox):
         )
 
     def close(self) -> None:
-        """Stop and remove the container."""
+        """Stop and remove the container.
+
+        Safe to call multiple times; silently ignores errors during
+        cleanup.
+        """
         try:
             self._sock.close()
         except Exception:

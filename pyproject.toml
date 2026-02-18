@@ -33,7 +33,20 @@ dev = [
     "pytest-mock>=3.10.0",
     "isort>=6.0.0",
     "black>=25.1.0",
+    "sphinx>=7.0",
+    "furo>=2024.0",
+    "sphinx-copybutton>=0.5",
 ]
+docs = [
+    "sphinx>=7.0",
+    "furo>=2024.0",
+    "sphinx-copybutton>=0.5",
+]
+
+[project.urls]
+Documentation = "https://agentbuilder.readthedocs.io"
+Repository = "https://github.com/rishi-s8/agentbuilder"
+Issues = "https://github.com/rishi-s8/agentbuilder/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
