@@ -2,7 +2,7 @@
 Utility functions for agentbuilder package.
 """
 
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from agentbuilder.Client.openai_client import ConversationWrapper
 from agentbuilder.Loop.base import AgenticLoop
@@ -92,17 +92,65 @@ def create_agent_tool(
     return AgentTool(agent=agent, name=name, description=description)
 
 
+def create_agent_factory(
+    model_name: str,
+    tools: List,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    verbose: bool = True,
+    max_iterations: int = 80,
+    system_prompt: Optional[str] = None,
+) -> Callable[[], AgenticLoop]:
+    """
+    Create a factory callable that produces fresh AgenticLoop instances.
+
+    Each invocation of the returned callable creates a new AgenticLoop with its
+    own ConversationWrapper. The tool_map objects are read-only and safe to share.
+
+    Args:
+        model_name: Name of the model to use
+        tools: List of Tool objects available to the agent
+        api_key: OpenAI API key (if None, uses environment variable)
+        base_url: Custom API endpoint URL
+        verbose: Whether to print execution details
+        max_iterations: Maximum number of iterations for the agentic loop
+        system_prompt: System prompt to set conversation context
+
+    Returns:
+        A zero-argument callable that returns a fresh AgenticLoop each time
+    """
+    # Build tool_map once — tools are read-only, safe to share
+    tool_map = {tool.name: tool for tool in tools}
+
+    def factory() -> AgenticLoop:
+        conversation = ConversationWrapper(
+            api_key=api_key,
+            model=model_name,
+            base_url=base_url,
+            verbose=verbose,
+            system_prompt=system_prompt,
+        )
+        planner = AgenticPlanner(conversation, tool_map, verbose=verbose)
+        return AgenticLoop(
+            conversation, planner, tool_map, verbose=verbose, max_iterations=max_iterations
+        )
+
+    return factory
+
+
 def create_remote_agent_tool(base_url: str) -> RemoteAgentTool:
     """
     Create a remote sub-agent tool that connects to an already-running agent server.
 
-    Auto-discovers the agent's name and description from GET {base_url}/info.
+    Auto-discovers the agent's name and description from GET {base_url}/info,
+    then creates a session via POST {base_url}/sessions. Call .close() on the
+    returned tool when done to delete the remote session.
 
     Args:
         base_url: Base URL of the remote agent server (e.g., "http://localhost:8100")
 
     Returns:
-        RemoteAgentTool connected to the remote agent
+        RemoteAgentTool connected to the remote agent with an active session
     """
     return RemoteAgentTool(base_url=base_url)
 

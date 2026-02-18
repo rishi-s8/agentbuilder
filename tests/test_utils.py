@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from agentbuilder.Loop.base import AgenticLoop
-from agentbuilder.utils import create_agent
+from agentbuilder.utils import create_agent, create_agent_factory
 
 
 class TestCreateAgent:
@@ -255,3 +255,82 @@ class TestCreateAgent:
 
         # Verify the result is the mock loop (simulating AgenticLoop)
         assert result == mock_loop
+
+
+class TestCreateAgentFactory:
+    """Tests for create_agent_factory utility function."""
+
+    @pytest.fixture
+    def sample_tools(self, sample_tool):
+        """Sample tools list."""
+        return [sample_tool]
+
+    def test_returns_callable(self, sample_tools):
+        """Test create_agent_factory returns a callable."""
+        factory = create_agent_factory(model_name="gpt-4", tools=sample_tools)
+
+        assert callable(factory)
+
+    @patch("agentbuilder.utils.ConversationWrapper")
+    @patch("agentbuilder.utils.AgenticPlanner")
+    @patch("agentbuilder.utils.AgenticLoop")
+    def test_each_call_creates_new_agent(
+        self, mock_loop_class, mock_planner_class, mock_conversation_class, sample_tools
+    ):
+        """Test that each factory call creates a new AgenticLoop."""
+        mock_conversation_class.return_value = Mock()
+        mock_planner_class.return_value = Mock()
+        loop1, loop2 = Mock(), Mock()
+        mock_loop_class.side_effect = [loop1, loop2]
+
+        factory = create_agent_factory(model_name="gpt-4", tools=sample_tools)
+
+        result1 = factory()
+        result2 = factory()
+
+        assert result1 == loop1
+        assert result2 == loop2
+        assert mock_loop_class.call_count == 2
+        assert mock_conversation_class.call_count == 2
+
+    @patch("agentbuilder.utils.ConversationWrapper")
+    @patch("agentbuilder.utils.AgenticPlanner")
+    @patch("agentbuilder.utils.AgenticLoop")
+    def test_passes_all_args_through(
+        self, mock_loop_class, mock_planner_class, mock_conversation_class, sample_tools
+    ):
+        """Test that all arguments are forwarded to the underlying constructors."""
+        mock_conversation = Mock()
+        mock_conversation_class.return_value = mock_conversation
+        mock_planner = Mock()
+        mock_planner_class.return_value = mock_planner
+        mock_loop_class.return_value = Mock()
+
+        factory = create_agent_factory(
+            model_name="gpt-4",
+            tools=sample_tools,
+            api_key="test_key",
+            base_url="https://custom.api.com/v1",
+            verbose=False,
+            max_iterations=50,
+            system_prompt="You are helpful",
+        )
+        factory()
+
+        mock_conversation_class.assert_called_once_with(
+            api_key="test_key",
+            model="gpt-4",
+            base_url="https://custom.api.com/v1",
+            verbose=False,
+            system_prompt="You are helpful",
+        )
+        mock_planner_class.assert_called_once_with(
+            mock_conversation, {"add": sample_tools[0]}, verbose=False
+        )
+        mock_loop_class.assert_called_once_with(
+            mock_conversation,
+            mock_planner,
+            {"add": sample_tools[0]},
+            verbose=False,
+            max_iterations=50,
+        )
