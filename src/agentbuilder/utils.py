@@ -105,3 +105,51 @@ def create_remote_agent_tool(base_url: str) -> RemoteAgentTool:
         RemoteAgentTool connected to the remote agent
     """
     return RemoteAgentTool(base_url=base_url)
+
+
+def create_code_agent(
+    model_name: str,
+    sandbox,
+    additional_tools: Optional[List] = None,
+    system_prompt: Optional[str] = None,
+    max_iterations: int = 80,
+    **kwargs,
+) -> AgenticLoop:
+    """
+    Create an agent equipped with code execution tools.
+
+    Args:
+        model_name: Name of the model to use
+        sandbox: A Sandbox instance for code execution
+        additional_tools: Extra tools to include alongside code execution tools
+        system_prompt: System prompt (defaults to a code-focused prompt)
+        max_iterations: Maximum iterations for the agentic loop
+        **kwargs: Additional keyword arguments passed to create_agent()
+
+    Returns:
+        AgenticLoop configured with code execution capabilities
+    """
+    from agentbuilder.Tools.code_execution import (
+        CodeExecutionTool,
+        create_sandbox_tools,
+    )
+
+    code_tool = CodeExecutionTool(sandbox)
+    sandbox_tools = create_sandbox_tools(sandbox)
+    all_tools = [code_tool] + sandbox_tools + (additional_tools or [])
+
+    if system_prompt is None:
+        system_prompt = (
+            "You are a helpful coding assistant. You can write and execute Python code "
+            "to solve problems. Use the execute_code tool to run code. Variables and "
+            "imports persist between calls. You can also read/write files and install "
+            "packages in the sandbox."
+        )
+
+    return create_agent(
+        model_name=model_name,
+        tools=all_tools,
+        system_prompt=system_prompt,
+        max_iterations=max_iterations,
+        **kwargs,
+    )

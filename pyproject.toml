@@ -24,6 +24,9 @@ server = [
     "uvicorn>=0.20.0",
     "requests>=2.28.0",
 ]
+code = [
+    "docker>=7.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
