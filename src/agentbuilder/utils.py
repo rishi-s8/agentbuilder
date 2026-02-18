@@ -7,6 +7,8 @@ from typing import List, Optional
 from agentbuilder.Client.openai_client import ConversationWrapper
 from agentbuilder.Loop.base import AgenticLoop
 from agentbuilder.Planner.base import AgenticPlanner
+from agentbuilder.Tools.agent_tool import AgentTool
+from agentbuilder.Tools.remote_agent_tool import RemoteAgentTool
 
 
 def create_agent(
@@ -54,3 +56,52 @@ def create_agent(
     )
 
     return agentic_loop
+
+
+def create_agent_tool(
+    name: str,
+    description: str,
+    model_name: str,
+    tools: List,
+    system_prompt: Optional[str] = None,
+    max_iterations: int = 80,
+    **kwargs,
+) -> AgentTool:
+    """
+    Create a local sub-agent tool that delegates tasks in-process.
+
+    Args:
+        name: Name for the sub-agent tool
+        description: Description of what the sub-agent does
+        model_name: Name of the model to use for the sub-agent
+        tools: List of Tool objects available to the sub-agent
+        system_prompt: System prompt for the sub-agent
+        max_iterations: Maximum iterations for the sub-agent loop
+        **kwargs: Additional keyword arguments passed to create_agent()
+
+    Returns:
+        AgentTool wrapping the sub-agent
+    """
+    agent = create_agent(
+        model_name=model_name,
+        tools=tools,
+        system_prompt=system_prompt,
+        max_iterations=max_iterations,
+        **kwargs,
+    )
+    return AgentTool(agent=agent, name=name, description=description)
+
+
+def create_remote_agent_tool(base_url: str) -> RemoteAgentTool:
+    """
+    Create a remote sub-agent tool that connects to an already-running agent server.
+
+    Auto-discovers the agent's name and description from GET {base_url}/info.
+
+    Args:
+        base_url: Base URL of the remote agent server (e.g., "http://localhost:8100")
+
+    Returns:
+        RemoteAgentTool connected to the remote agent
+    """
+    return RemoteAgentTool(base_url=base_url)
