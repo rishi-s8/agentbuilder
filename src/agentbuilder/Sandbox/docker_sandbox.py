@@ -93,9 +93,7 @@ class DockerSandbox(Sandbox):
             tar.addfile(info, BytesIO(file_data))
         tar_stream.seek(0)
 
-        self.container.put_archive(
-            os.path.dirname(container_path), tar_stream
-        )
+        self.container.put_archive(os.path.dirname(container_path), tar_stream)
 
     def execute(self, code: str, timeout: int = 30) -> ExecutionResult:
         """
@@ -173,9 +171,7 @@ class DockerSandbox(Sandbox):
 
     def install_package(self, package: str) -> ExecutionResult:
         """Install a Python package in the container."""
-        exit_code, output = self.container.exec_run(
-            ["pip", "install", package]
-        )
+        exit_code, output = self.container.exec_run(["pip", "install", package])
         stdout = output.decode()
         return ExecutionResult(
             stdout=stdout,

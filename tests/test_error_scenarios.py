@@ -4,7 +4,8 @@ import json
 from unittest.mock import Mock, patch
 
 import pytest
-from openai import APIConnectionError, APIError, AuthenticationError, RateLimitError
+from openai import (APIConnectionError, APIError, AuthenticationError,
+                    RateLimitError)
 
 from agentbuilder.Action.base import ExecuteToolsAction
 from agentbuilder.Client.openai_client import ConversationWrapper

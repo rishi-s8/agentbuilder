@@ -132,7 +132,11 @@ def create_agent_factory(
         )
         planner = AgenticPlanner(conversation, tool_map, verbose=verbose)
         return AgenticLoop(
-            conversation, planner, tool_map, verbose=verbose, max_iterations=max_iterations
+            conversation,
+            planner,
+            tool_map,
+            verbose=verbose,
+            max_iterations=max_iterations,
         )
 
     return factory
@@ -177,10 +181,8 @@ def create_code_agent(
     Returns:
         AgenticLoop configured with code execution capabilities
     """
-    from agentbuilder.Tools.code_execution import (
-        CodeExecutionTool,
-        create_sandbox_tools,
-    )
+    from agentbuilder.Tools.code_execution import (CodeExecutionTool,
+                                                   create_sandbox_tools)
 
     code_tool = CodeExecutionTool(sandbox)
     sandbox_tools = create_sandbox_tools(sandbox)

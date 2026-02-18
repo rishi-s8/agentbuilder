@@ -48,8 +48,10 @@ def main():
             signal.signal(signal.SIGALRM, timeout_handler)
             signal.alarm(timeout)
 
-            with contextlib.redirect_stdout(stdout_capture), \
-                 contextlib.redirect_stderr(stderr_capture):
+            with (
+                contextlib.redirect_stdout(stdout_capture),
+                contextlib.redirect_stderr(stderr_capture),
+            ):
                 exec(code, env)
 
             signal.alarm(0)

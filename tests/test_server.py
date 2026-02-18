@@ -78,6 +78,7 @@ class TestCreateAgentApp:
 
     def test_create_session_factory_error_returns_500(self):
         """Test POST /sessions returns 500 when factory raises."""
+
         def bad_factory():
             raise RuntimeError("Factory exploded")
 
@@ -112,9 +113,7 @@ class TestCreateAgentApp:
         app = create_agent_app(factory, name="test", description="Test")
         client = TestClient(app)
 
-        response = client.post(
-            "/sessions/nonexistent/run", json={"message": "hello"}
-        )
+        response = client.post("/sessions/nonexistent/run", json={"message": "hello"})
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Session not found"
@@ -157,9 +156,7 @@ class TestCreateAgentApp:
         assert response.json()["status"] == "ok"
 
         # Subsequent run should 404
-        response = client.post(
-            f"/sessions/{session_id}/run", json={"message": "hello"}
-        )
+        response = client.post(f"/sessions/{session_id}/run", json={"message": "hello"})
         assert response.status_code == 404
 
     def test_delete_nonexistent_session_returns_404(self):
@@ -201,9 +198,7 @@ class TestCreateAgentApp:
         client = TestClient(app)
 
         session_id = client.post("/sessions").json()["session_id"]
-        response = client.post(
-            f"/sessions/{session_id}/run", json={"message": ""}
-        )
+        response = client.post(f"/sessions/{session_id}/run", json={"message": ""})
 
         assert response.status_code == 200
         agent.run.assert_called_once_with("")
@@ -216,9 +211,7 @@ class TestCreateAgentApp:
         client = TestClient(app, raise_server_exceptions=False)
 
         session_id = client.post("/sessions").json()["session_id"]
-        response = client.post(
-            f"/sessions/{session_id}/run", json={"message": "crash"}
-        )
+        response = client.post(f"/sessions/{session_id}/run", json={"message": "crash"})
 
         assert response.status_code == 500
 

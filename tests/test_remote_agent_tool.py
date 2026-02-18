@@ -184,9 +184,7 @@ class TestRemoteAgentTool:
     @patch("agentbuilder.Tools.remote_agent_tool.requests.get")
     def test_to_openai_format(self, mock_get, mock_post):
         """Test OpenAI format output."""
-        mock_get.return_value = _mock_info_response(
-            name="helper", description="Helps"
-        )
+        mock_get.return_value = _mock_info_response(name="helper", description="Helps")
         mock_post.return_value = _mock_session_response()
 
         tool = RemoteAgentTool(base_url="http://localhost:8100")

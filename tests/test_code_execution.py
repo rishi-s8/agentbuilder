@@ -6,7 +6,8 @@ import pytest
 
 from agentbuilder.Sandbox.base import ExecutionResult, Sandbox
 from agentbuilder.Tools.base import Response, Tool
-from agentbuilder.Tools.code_execution import CodeExecutionTool, create_sandbox_tools
+from agentbuilder.Tools.code_execution import (CodeExecutionTool,
+                                               create_sandbox_tools)
 
 
 class FakeSandbox(Sandbox):
@@ -78,8 +79,10 @@ class TestCodeExecutionTool:
         """Test code execution failure."""
         sandbox = MagicMock(spec=Sandbox)
         sandbox.execute.return_value = ExecutionResult(
-            stdout="", stderr="NameError: name 'x' is not defined",
-            success=False, exit_code=1,
+            stdout="",
+            stderr="NameError: name 'x' is not defined",
+            success=False,
+            exit_code=1,
         )
         tool = CodeExecutionTool(sandbox)
 
@@ -178,7 +181,9 @@ class TestCreateCodeAgent:
         mock_create_agent.assert_called_once()
 
         call_kwargs = mock_create_agent.call_args
-        tools = call_kwargs[1]["tools"] if "tools" in call_kwargs[1] else call_kwargs[0][1]
+        tools = (
+            call_kwargs[1]["tools"] if "tools" in call_kwargs[1] else call_kwargs[0][1]
+        )
         # Should have execute_code + read_file + write_file + install_package = 4 tools
         assert len(tools) == 4
 
