@@ -215,9 +215,15 @@ def tool_from_function(func: Callable) -> Tool:
         return func(params_instance)
 
     # Create the tool
-    return Tool(
+    tool = Tool(
         name=func.__name__,
         description=description,
         parameters=parameters,
         function=wrapper,
     )
+
+    # Save source references for sandbox injection
+    tool._source_func = func
+    tool._param_type = param_type
+
+    return tool

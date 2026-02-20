@@ -254,10 +254,76 @@ def create_remote_agent_tool(base_url: str) -> RemoteAgentTool:
     return RemoteAgentTool(base_url=base_url)
 
 
+def _inject_tools_into_sandbox(sandbox, tools: List) -> None:
+    """Inject tool functions as callable Python code into a sandbox.
+
+    For each tool, extracts the underlying source code and executes it in
+    the sandbox so the agent can call the function directly from generated
+    code.
+
+    Tools created via :func:`~agentbuilder.Tools.base.tool_from_function`
+    have ``_source_func`` and ``_param_type`` attributes; for these the
+    Pydantic model source, the original function source, and a kwargs
+    wrapper are all injected.  For plain :class:`~agentbuilder.Tools.base.Tool`
+    objects the ``tool.function`` source is injected directly.
+
+    Args:
+        sandbox: The sandbox to inject code into.
+        tools: List of :class:`~agentbuilder.Tools.base.Tool` objects.
+    """
+    import inspect
+    import textwrap
+
+    for tool in tools:
+        if hasattr(tool, "_param_type") and hasattr(tool, "_source_func"):
+            # Pydantic-based tool from tool_from_function
+            model_source = inspect.getsource(tool._param_type)
+            func_source = inspect.getsource(tool._source_func)
+
+            # Inject the Pydantic model and original function
+            sandbox.execute(textwrap.dedent(model_source))
+            sandbox.execute(textwrap.dedent(func_source))
+
+            # Inject a kwargs wrapper so the agent can call tool_name(a=1, b=2)
+            orig_func_name = tool._source_func.__name__
+            param_type_name = tool._param_type.__name__
+            wrapper_code = (
+                f"def {tool.name}(**kwargs):\n"
+                f"    return {orig_func_name}({param_type_name}(**kwargs))\n"
+            )
+            sandbox.execute(wrapper_code)
+        else:
+            # Direct Tool — inject function source as-is
+            func_source = inspect.getsource(tool.function)
+            sandbox.execute(textwrap.dedent(func_source))
+
+
+def _build_tools_prompt(tools: List) -> str:
+    """Build a system-prompt section describing injected sandbox tools.
+
+    Args:
+        tools: List of :class:`~agentbuilder.Tools.base.Tool` objects.
+
+    Returns:
+        A string to append to the system prompt.
+    """
+    lines = [
+        "\n\nYou have the following Python functions available in the sandbox. "
+        "Call them directly in your code:\n"
+    ]
+    for tool in tools:
+        params_desc = ", ".join(
+            f"{name}: {prop.get('type', 'any')}"
+            for name, prop in tool.parameters.get("properties", {}).items()
+        )
+        lines.append(f"- {tool.name}({params_desc}): {tool.description}")
+    return "\n".join(lines)
+
+
 def create_code_agent(
     model_name: str,
     sandbox,
-    additional_tools: Optional[List] = None,
+    tools: Optional[List] = None,
     system_prompt: Optional[str] = None,
     max_iterations: int = 80,
     **kwargs,
@@ -266,15 +332,16 @@ def create_code_agent(
     Create an agent equipped with code execution tools.
 
     Automatically creates a :class:`~agentbuilder.Tools.code_execution.CodeExecutionTool`
-    and sandbox management tools (``read_file``, ``write_file``, ``install_package``)
-    from the provided :class:`~agentbuilder.Sandbox.base.Sandbox`.
+    from the provided :class:`~agentbuilder.Sandbox.base.Sandbox`.  If *tools*
+    are supplied, their source code is injected into the sandbox so the agent
+    can call them directly from generated Python code.
 
     Args:
         model_name: Name of the model to use.
         sandbox: A :class:`~agentbuilder.Sandbox.base.Sandbox` instance
             for code execution (e.g. :class:`~agentbuilder.Sandbox.docker_sandbox.DockerSandbox`).
-        additional_tools: Extra :class:`~agentbuilder.Tools.base.Tool` objects
-            to include alongside the code execution tools.
+        tools: :class:`~agentbuilder.Tools.base.Tool` objects to inject
+            into the sandbox as callable Python functions.
         system_prompt: System prompt (defaults to a code-focused prompt if
             ``None``).
         max_iterations: Maximum iterations for the agentic loop.
@@ -303,24 +370,26 @@ def create_code_agent(
             result = agent.run("Write a script that prints the first 10 primes")
             print(result)
     """
-    from agentbuilder.Tools.code_execution import (CodeExecutionTool,
-                                                   create_sandbox_tools)
+    from agentbuilder.Tools.code_execution import CodeExecutionTool
 
     code_tool = CodeExecutionTool(sandbox)
-    sandbox_tools = create_sandbox_tools(sandbox)
-    all_tools = [code_tool] + sandbox_tools + (additional_tools or [])
+
+    if tools:
+        _inject_tools_into_sandbox(sandbox, tools)
 
     if system_prompt is None:
         system_prompt = (
             "You are a helpful coding assistant. You can write and execute Python code "
             "to solve problems. Use the execute_code tool to run code. Variables and "
-            "imports persist between calls. You can also read/write files and install "
-            "packages in the sandbox."
+            "imports persist between calls."
         )
+
+    if tools:
+        system_prompt += _build_tools_prompt(tools)
 
     return create_agent(
         model_name=model_name,
-        tools=all_tools,
+        tools=[code_tool],
         system_prompt=system_prompt,
         max_iterations=max_iterations,
         **kwargs,
