@@ -6,7 +6,7 @@ ready-to-use agents. Most users should start here rather than constructing
 :class:`~agentbuilder.Loop.base.AgenticLoop` manually.
 """
 
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 from agentbuilder.Client.openai_client import ConversationWrapper
 from agentbuilder.Loop.base import AgenticLoop
@@ -18,7 +18,7 @@ from agentbuilder.Tools.remote_agent_tool import RemoteAgentTool
 def create_agent(
     model_name: str,
     tools: List,
-    api_key: Optional[str] = None,
+    api_key: Optional[Any] = None,
     base_url: Optional[str] = None,
     verbose: bool = True,
     max_iterations: int = 80,
@@ -36,8 +36,9 @@ def create_agent(
         model_name: Name of the model to use (e.g. ``"gpt-4o-mini"``).
         tools: List of :class:`~agentbuilder.Tools.base.Tool` objects
             available to the agent.
-        api_key: OpenAI API key. If ``None``, loaded from the
-            ``OPENAI_API_KEY`` environment variable or ``.env`` file.
+        api_key: OpenAI API key or a callable bearer-token provider. If
+            ``None``, loaded from the ``OPENAI_API_KEY`` environment variable
+            or ``.env`` file.
         base_url: Custom API endpoint URL for OpenAI-compatible providers.
         verbose: Whether to print execution details to stdout.
         max_iterations: Maximum plan-execute cycles before the loop stops.
@@ -149,7 +150,7 @@ def create_agent_tool(
 def create_agent_factory(
     model_name: str,
     tools: List,
-    api_key: Optional[str] = None,
+    api_key: Optional[Any] = None,
     base_url: Optional[str] = None,
     verbose: bool = True,
     max_iterations: int = 80,

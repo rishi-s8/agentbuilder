@@ -19,6 +19,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mcp = [
+    "mcp>=2.0.0,<3.0.0",
+]
+foundry = [
+    "azure-identity>=1.17.0",
+]
 server = [
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",

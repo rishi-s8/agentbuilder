@@ -13,6 +13,7 @@ A flexible Python framework for building agentic AI systems with tool orchestrat
 - **Tool-calling agents** -- define tools as Python functions with Pydantic models and let the LLM orchestrate them
 - **Code execution** -- run Python in isolated Docker sandboxes with persistent state
 - **Multi-agent delegation** -- compose agents locally or across HTTP boundaries
+- **MCP clients** -- discover remote Streamable HTTP tools and expose them to agents
 - **Server mode** -- expose any agent as a session-isolated FastAPI service
 - **Conversation management** -- save, load, and reset chat history
 - **OpenAI-compatible** -- works with any OpenAI-compatible API endpoint
@@ -71,6 +72,8 @@ ConversationWrapper          Tools
 
 | Extra | What it adds | Install |
 |-------|-------------|---------|
+| `mcp` | Remote MCP tool discovery and execution (Python 3.10+) | `pip install agentbuilder[mcp]` |
+| `foundry` | Azure Foundry authentication with `DefaultAzureCredential` | `pip install agentbuilder[foundry]` |
 | `server` | FastAPI + Uvicorn for HTTP serving | `pip install agentbuilder[server]` |
 | `code` | Docker SDK for sandboxed code execution | `pip install agentbuilder[code]` |
 | `dev` | pytest, black, isort for development | `pip install agentbuilder[dev]` |
@@ -94,6 +97,7 @@ See the [`examples/`](examples/) directory for runnable projects:
 - **[Code Agent](examples/code_agent/)** -- Docker sandbox code execution
 - **[Multi-Agent](examples/multi_agent/)** -- parent-child agent delegation
 - **[Served Agent](examples/served_agent/)** -- HTTP agent serving and remote access
+- **[Azure Foundry WorkIQ Mail Agent](examples/workiq_mail/)** -- keyless model auth and Outlook mail tools
 
 ## Contributing
 

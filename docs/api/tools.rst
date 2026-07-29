@@ -18,3 +18,8 @@ agentbuilder.Tools
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. automodule:: agentbuilder.Tools.mcp
+   :members:
+   :undoc-members:
+   :show-inheritance:

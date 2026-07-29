@@ -40,7 +40,7 @@ class ConversationWrapper(BaseConversationWrapper):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: Optional[Any] = None,
         model: Optional[str] = None,
         base_url: Optional[str] = "https://inference.rcp.epfl.ch/v1",
         verbose: bool = False,
@@ -50,8 +50,9 @@ class ConversationWrapper(BaseConversationWrapper):
         Initialize the conversation wrapper.
 
         Args:
-            api_key: OpenAI API key. If ``None``, loads from
-                ``OPENAI_API_KEY`` env var or ``.env`` file.
+            api_key: OpenAI API key or a callable bearer-token provider.
+                If ``None``, loads from ``OPENAI_API_KEY`` env var or
+                ``.env`` file.
             model: Model identifier (e.g. ``"gpt-4o-mini"``). Falls back to
                 the ``MODEL`` env var.
             base_url: Custom API endpoint URL. Falls back to ``BASE_URL``

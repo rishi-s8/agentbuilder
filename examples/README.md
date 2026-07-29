@@ -54,6 +54,21 @@ Serve an agent as a FastAPI service and connect from a client:
 
 [Go to Served Agent](served_agent/)
 
+### 5. Azure Foundry WorkIQ Mail Agent (`workiq_mail/`)
+
+**Best for**: Using Azure login and Copilot-authenticated MCP tools
+
+An interactive mail agent that:
+- Authenticates Azure Foundry with `DefaultAzureCredential`
+- Reads a Copilot-compatible `.mcp.json`
+- Reuses and refreshes the local Copilot MCP OAuth token
+- Dynamically converts MCP tool schemas into AgentBuilder tools
+- Requires confirmation before mutating mail
+
+**Requires**: Python 3.10+, `pip install -e ".[mcp,foundry]"`
+
+[Go to Azure Foundry WorkIQ Mail Agent](workiq_mail/)
+
 ## Quick Start
 
 1. **Install agentbuilder**:

@@ -9,12 +9,14 @@ Provides the building blocks for exposing callable functions to an LLM agent:
   automatically from a Pydantic-annotated function.
 - :class:`AgentTool` -- delegates a task to a local sub-agent (in-process).
 - :class:`RemoteAgentTool` -- delegates a task to a remote agent over HTTP.
+- :class:`MCPToolSet` -- exposes tools discovered from a remote MCP server.
 
 Code-execution tools live in :mod:`agentbuilder.Tools.code_execution`.
 """
 
 from agentbuilder.Tools.agent_tool import AgentTool
 from agentbuilder.Tools.base import Tool, tool_from_function
+from agentbuilder.Tools.mcp import MCPToolSet
 from agentbuilder.Tools.remote_agent_tool import RemoteAgentTool
 
-__all__ = ["Tool", "tool_from_function", "AgentTool", "RemoteAgentTool"]
+__all__ = ["Tool", "tool_from_function", "AgentTool", "RemoteAgentTool", "MCPToolSet"]

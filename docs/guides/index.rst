@@ -11,4 +11,5 @@ Step-by-step guides for common tasks.
    multi-agent
    serving-agents
    custom-tools
+   mcp-tools
    conversation-management
